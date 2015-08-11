@@ -1,10 +1,12 @@
-function oulipoperation(form_fields)
+function toolops(form_fields)
 {
 	var radio = $('input[name="inclexcl"]:checked').val();
-	var lttrs = $('input[name="oulipostools-lttrs"]').val();
-	var combo = $( "#oulipostest").val();
-	var txtsrc = $('#oulipostext').val();
-	var strict = $('input[name="oulipostrict"]').val();
+	var lttrs = $('input[name="tool-lttrs"]').val();
+	var modnum = $('input[name="tool-textinput"]').val();
+	var pos = $("#pos-sttg").val();
+	var flag = $("#peek-sttg").val();
+	var combo = $("#tool-test").val();
+	var txtsrc = $('#tool-text').val();
 	var lttr_array = new Array();
 	var nobreaks = txtsrc.replace(/(\r\n|\n|\r)/gm," ");
 		nobreaks = nobreaks.replace(/:\s/g," ");
@@ -58,8 +60,32 @@ function oulipoperation(form_fields)
 				}
 			lipogram(nobreaks,vowels);
 		}
+		if(combo=="quotes")
+		{
+			quotesonly(txtsrc);
+		}
+		if(combo=="question")
+		{
+			questionable(txtsrc);
+		}
+		if(combo=="nth")
+		{
+			nthword(txtsrc,modnum);
+		}
+		if(combo=="pos")
+		{
+			pos_tag(txtsrc,pos);
+		}
+		if(combo=="beforenafter")
+		{
+			beforenafter(lttrs,txtsrc,flag);
+		}
 	lttr_array = [];
 	return false;
+}
+function write(results)
+{
+	$('#tool-text').val(results);
 }
 function tautogram(text,lttr_array)
 {
@@ -101,11 +127,12 @@ function tautogram(text,lttr_array)
 			
 			}
 		}
-	$('#oulipostext').val(output);
+	//$('#oulipostext').val(output);
+	write(output);
 	lttr_array = [];
 	text = "";
 	$('.button .submit').disabled = false;
-	$('oulipostools-lttrs').val("");
+	$('tool-lttrs').val("");
 }
 function lipogram(text, lttr_array)
 {
@@ -147,7 +174,8 @@ function lipogram(text, lttr_array)
 			{
 			}
 		}
-	$('#oulipostext').val(output);
+	//$('#oulipostext').val(output);
+	write(output);
 	lttr_array = [];
 	text = "";
 	$('.button .submit').disabled = false;
@@ -168,7 +196,8 @@ function strictmode(text,lttr_array)
 function consonant(text)
 {
 	var matches = text.replace(/[aeiou]/ig," ");
-	$('#oulipostext').val(matches);
+	//$('#oulipostext').val(matches);
+	write(matches);
 	text = "";
 	$('.button .submit').disabled = false;
 }
@@ -201,5 +230,117 @@ function fib(text)
 				selections += txtcount[fib_index] + " ";
 			}
 		}
-		$('#oulipostext').val(selections);
+		//$('#oulipostext').val(selections);
+		write(selections);
+}
+function quotesonly(text)
+{
+	var corpus = text.replace(/“/g,"\"");
+		corpus = corpus.replace(/”/g,"\"");
+	var quotes = [];
+	var match = [];
+		match = corpus.match(/"([^"]*)"/gi);
+	var selections = "";
+		if(match)
+		{
+			for(var i=0;i<match.length;i++)
+			{
+				quotes.push(match[i]);
+			}
+		}
+	
+	for(var k=0;k<quotes.length;k++)
+	{
+		selections += quotes[k] + "\n";
+	}
+	
+	//$('#oulipostext').val(selections);
+	write(selections);
+}
+function questionable(text)
+{
+var repltext = text.replace(/\"/g,"");
+    repltext = repltext.replace(/“/g,"");
+    repltext = repltext.replace(/”/g,"");
+var storage = [];
+var selections = "";
+var regex =  /[^\.!\?]+[\.!\?]+/gi;
+storage = repltext.match(regex);
+var questions = [];
+for (var i=0;i<storage.length;i++)
+{
+  var punct = storage[i].slice(-1);
+  if(punct == "\?")
+    {
+      questions.push(storage[i]);
+    }
+}
+for(var k=0;k<=questions.length-1;k++)
+	{
+		selections += questions[k] + "\n";
+	}
+	
+	//$('#oulipostext').val(selections);
+	write(selections);
+}
+
+function nthword(text,modnum)
+{
+	var storage = [];
+	text = text.replace("\r\n"," ");
+	storage = text.split(" ");
+	modnum = parseInt(modnum);
+	var outtext = "";
+	for(i=0;i<storage.length-1;i++)
+	{
+		if(i%modnum==0)
+		{
+			if(i != 0)
+			{
+				outtext += " " + storage[i-1];
+			}
+		}
+	}
+	write(outtext);
+}
+
+function createCORSRequest(method, url)
+{
+	var xhr = new XMLHttpRequest();
+	if("withCredentials" in xhr){
+		xhr.open(method,url,true);
+	} else if (typeof XDomainRequest != "undefined"){
+		xhr = new XDomainRequest();
+		xhr.open(method,url);
+	} else {
+		xhr = null;
+	}
+	return xhr;
+}
+
+function pos_tag(txt,part)
+{
+	var url = "http://104.131.81.176/pos_sorter/pos_sorter.php?txtsrc=" + txt + "&pos=" + part;
+	var request = createCORSRequest("POST",url);
+	if(request){
+		request.onload = function (){
+			write(request.responseText);
+		};
+		request.onreadystatechange = function() {
+			
+		}
+	}
+	request.send();
+}
+
+function beforenafter(word,text,flag)
+{
+	var result;
+	if(flag == "before")
+	{
+		result = text.match("(?:[a-zA-Z'-]+[^a-zA-Z'-]+){0,1}"+word,"gi");
+	} else if (flag == "after") {
+		result = text.match(word+"(?:[^a-zA-Z'-]+[a-zA-Z'-]+){0,1}","gi");
+	}
+	write(result);
 }
